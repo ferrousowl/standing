@@ -11,15 +11,19 @@ import {
 const env = import.meta.env;
 
 /**
- * Public Arc endpoints, tried in order. A visitor whose network, ad blocker or bot check stops one
- * provider still gets the app through the next.
+ * Public Arc endpoints, tried in order. A visitor whose network, ad blocker or DNS filter stops one
+ * provider still gets the app through the next. They are deliberately spread over several
+ * domains: a filter that blocks `arc.io` takes out every official endpoint at once.
  */
 const RPCS: string[] = env.VITE_RPC
   ? [env.VITE_RPC]
   : [
       "https://rpc.mainnet.arc.io",
+      "https://arc-rpc.publicnode.com",
       "https://rpc.drpc.mainnet.arc.io",
+      "https://arc.drpc.org",
       "https://rpc.quicknode.mainnet.arc.io",
+      "https://5042.rpc.thirdweb.com",
       "https://rpc.blockdaemon.mainnet.arc.io",
     ];
 

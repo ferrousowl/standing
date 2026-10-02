@@ -573,8 +573,8 @@ async function render() {
   } catch (err) {
     console.error(err);
     main = `<section class="narrow center"><h1>Couldn't load</h1>
-      <p class="muted">The app couldn't reach an Arc RPC endpoint from this browser. An ad blocker, VPN or strict
-      network filter is the usual cause.</p><p class="muted small">${esc(explain(err))}</p>
+      <p class="muted">The app couldn't reach any Arc RPC endpoint from this browser. An ad blocker, VPN or DNS
+      filter is the usual cause.</p><p class="muted small">${esc(explain(err))}</p>
       <button class="btn" onclick="location.reload()">Try again</button></section>`;
   }
   if (id !== renderId) return; // a newer navigation finished first
