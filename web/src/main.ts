@@ -562,11 +562,19 @@ async function view(): Promise<string> {
 
 async function render() {
   const id = ++renderId;
+  // Never leave a blank page while the chain is being read.
+  if (!app.firstChild) app.innerHTML = `${header()}<main><p class="empty">Reading from Arc…</p></main>${footer()}`;
   let main: string;
   try {
-    main = await view();
+    main = await view().catch(async () => {
+      await new Promise((r) => setTimeout(r, 1200)); // one quiet retry before bothering the visitor
+      return view();
+    });
   } catch (err) {
-    main = `<section class="narrow center"><h1>Couldn't load</h1><p class="muted">${esc(explain(err))}</p>
+    console.error(err);
+    main = `<section class="narrow center"><h1>Couldn't load</h1>
+      <p class="muted">The app couldn't reach an Arc RPC endpoint from this browser. An ad blocker, VPN or strict
+      network filter is the usual cause.</p><p class="muted small">${esc(explain(err))}</p>
       <button class="btn" onclick="location.reload()">Try again</button></section>`;
   }
   if (id !== renderId) return; // a newer navigation finished first

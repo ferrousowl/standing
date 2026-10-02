@@ -1,5 +1,6 @@
 import {
   createPublicClient,
+  fallback,
   defineChain,
   http,
   parseAbi,
@@ -9,12 +10,25 @@ import {
 
 const env = import.meta.env;
 
+/**
+ * Public Arc endpoints, tried in order. A visitor whose network, ad blocker or bot check stops one
+ * provider still gets the app through the next.
+ */
+const RPCS: string[] = env.VITE_RPC
+  ? [env.VITE_RPC]
+  : [
+      "https://rpc.mainnet.arc.io",
+      "https://rpc.drpc.mainnet.arc.io",
+      "https://rpc.quicknode.mainnet.arc.io",
+      "https://rpc.blockdaemon.mainnet.arc.io",
+    ];
+
 /** Arc mainnet. Gas is paid in USDC: 18 decimals natively, 6 through the ERC-20 interface. */
 export const arc = defineChain({
   id: Number(env.VITE_CHAIN_ID ?? 5042),
   name: "Arc",
   nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
-  rpcUrls: { default: { http: [env.VITE_RPC ?? "https://rpc.mainnet.arc.io"] } },
+  rpcUrls: { default: { http: RPCS } },
   blockExplorers: { default: { name: "Arc Explorer", url: "https://explorer.arc.io" } },
   contracts: { multicall3: { address: "0xcA11bde05977b3631167028862bE2a173976CA11" } },
 });
@@ -88,7 +102,7 @@ export const multicallFromAbi = parseAbi([
 
 export const client: PublicClient = createPublicClient({
   chain: arc,
-  transport: http(undefined, { batch: true }),
+  transport: fallback(RPCS.map((url) => http(url, { batch: true, timeout: 8_000, retryCount: 1 }))),
   batch: { multicall: true },
 });
 
