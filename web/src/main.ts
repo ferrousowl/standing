@@ -1,4 +1,4 @@
-import { encodeFunctionData, parseUnits, toHex, type Address } from "viem";
+import { decodeFunctionResult, encodeFunctionData, parseUnits, toHex, type Address } from "viem";
 import {
   DEPLOYED,
   MULTICALL3_FROM,
@@ -24,6 +24,23 @@ const explorer = arc.blockExplorers.default.url;
 
 /** Gas an `execute` costs on Arc, measured on a mainnet fork. Used only for reward estimates. */
 const EXECUTE_GAS = 130_000n;
+
+/**
+ * Read a view at the real base fee. A plain eth_call on Arc reports `block.basefee` as zero, so
+ * anything the contract derives from it (the executor's gas refund) would read as nothing.
+ * Giving the call a gas limit and a fee makes the node evaluate it at the current base fee.
+ */
+async function readAtBaseFee<T>(functionName: "executable" | "quoteExecFee", args: readonly bigint[]): Promise<T> {
+  const { baseFeePerGas } = await client.getBlock();
+  const call = { abi: standingAbi, functionName, args } as Parameters<typeof encodeFunctionData>[0];
+  const { data } = await client.call({
+    to: STANDING,
+    data: encodeFunctionData(call),
+    gas: 30_000_000n,
+    maxFeePerGas: baseFeePerGas ?? 20_000_000_000n,
+  });
+  return decodeFunctionResult({ ...call, data: data! } as Parameters<typeof decodeFunctionResult>[0]) as T;
+}
 
 /** Chain time in seconds. Due dates are judged by the chain's clock, not the visitor's. */
 const chainNow = async () => Number((await client.getBlock()).timestamp);
@@ -331,11 +348,11 @@ async function account(): Promise<string> {
 
 async function keeper(): Promise<string> {
   const [total, now] = await Promise.all([client.readContract({ ...standing, functionName: "orderCount" }), chainNow()]);
-  const ids = await client.readContract({ ...standing, functionName: "executable", args: [0n, total, 1n] });
+  const ids = await readAtBaseFee<readonly bigint[]>("executable", [0n, total, 1n]);
   const orders = await getOrders([...ids]);
   const plans = new Map((await getPlans([...new Set(orders.map((o) => o.planId))])).map((p) => [p.id, p]));
   const fees = await Promise.all(
-    orders.map((o) => client.readContract({ ...standing, functionName: "quoteExecFee", args: [o.planId, EXECUTE_GAS] })),
+    orders.map((o) => readAtBaseFee<bigint>("quoteExecFee", [o.planId, EXECUTE_GAS])),
   );
 
   const rows = orders

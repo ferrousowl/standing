@@ -4,7 +4,7 @@
 //
 // Optional: RPC_URL (default Arc mainnet), INTERVAL seconds (default 60), BATCH (default 50),
 // MIN_PROFIT in USDC per order (default 0) — only take orders whose fee beats gas by this much.
-import { createPublicClient, createWalletClient, http, parseAbi, parseUnits } from "viem";
+import { createPublicClient, createWalletClient, decodeFunctionResult, encodeFunctionData, http, parseAbi, parseUnits } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 const { PRIVATE_KEY, STANDING, RPC_URL = "https://rpc.mainnet.arc.io" } = process.env;
@@ -42,14 +42,20 @@ async function tick() {
   // our gas plus the margin we want — this is what filters out dust plans with a zero cap.
   const minFee = (GAS_PER_ORDER * baseFeePerGas) / 10n ** 12n + MIN_PROFIT;
 
+  // A plain eth_call on Arc reports block.basefee as zero, which would make the contract quote
+  // the tip alone and hide orders that are worth running. Giving the call a gas limit and a fee
+  // makes the node evaluate it at the real base fee.
+  const atBaseFee = { gas: 30_000_000n, maxFeePerGas: baseFeePerGas };
   const due = [];
   for (let from = 0n; from < total; from += 500n) {
-    due.push(...(await reader.readContract({ ...standing, functionName: "executable", args: [from, 500n, minFee] })));
+    const call = { abi, functionName: "executable", args: [from, 500n, minFee] };
+    const { data } = await reader.call({ to: STANDING, data: encodeFunctionData(call), ...atBaseFee });
+    due.push(...decodeFunctionResult({ ...call, data }));
   }
   for (let i = 0; i < due.length; i += Number(BATCH)) {
     const ids = due.slice(i, i + Number(BATCH));
     // Simulate first: orders sharing one allowance can be listed together yet not all be payable.
-    const { result: payable, request } = await reader.simulateContract({ ...standing, functionName: "executeBatch", args: [ids], account });
+    const { result: payable, request } = await reader.simulateContract({ ...standing, functionName: "executeBatch", args: [ids], account, maxFeePerGas: baseFeePerGas * 2n });
     if (payable === 0n) continue;
     const hash = await wallet.writeContract(request);
     const receipt = await reader.waitForTransactionReceipt({ hash });
