@@ -4,8 +4,10 @@
 
 No billing server, no keeper token, no price oracle, no custody.
 
-- **App:** _added at deployment_
-- **Contract (Arc mainnet, chain 5042):** _added at deployment_
+- **App:** https://ferrousowl.github.io/standing/
+- **Contract (Arc mainnet, chain 5042):** [`0x6592396898A59FA0AA3374AFdC96b8FCF407EE24`](https://explorer.arc.io/address/0x6592396898A59FA0AA3374AFdC96b8FCF407EE24)
+
+The live deployment carries one subscription we run ourselves — the plan named "Demo: hourly test plan" — so the keeper flow can be watched on the explorer. It is a demonstration, not usage.
 
 ## Why this is an Arc-native idea
 
