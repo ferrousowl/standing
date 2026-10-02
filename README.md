@@ -7,7 +7,7 @@ No billing server, no keeper token, no price oracle, no custody.
 - **App:** https://ferrousowl.github.io/standing/
 - **Contract (Arc mainnet, chain 5042):** [`0x6592396898A59FA0AA3374AFdC96b8FCF407EE24`](https://explorer.arc.io/address/0x6592396898A59FA0AA3374AFdC96b8FCF407EE24)
 
-The live deployment carries one subscription we run ourselves — the plan named "Demo: hourly test plan" — so the keeper flow can be watched on the explorer. It is a demonstration, not usage.
+The live deployment carries one subscription we run ourselves — the plan named "Demo: hourly test plan" — so the keeper flow can be watched on the explorer. It is a demonstration, not usage. Since launch its hourly payment has been settled by a scheduled job on [Tock](https://github.com/ferrousowl/tock), our sister project, rather than by the bot in `keeper/`.
 
 ## Why this is an Arc-native idea
 
