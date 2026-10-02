@@ -538,7 +538,9 @@ let renderId = 0;
 async function view(): Promise<string> {
   const [, route, arg] = (location.hash || "#/").split("/");
   if (!DEPLOYED && route && route !== "integrate") {
-    return notFound("The contract address isn't configured for this build.");
+    return `<section class="narrow center"><h1>Launching shortly</h1><p class="muted">The contract is being deployed to
+      Arc mainnet. Until then you can read how it works and how to integrate.</p>
+      <div class="row" style="justify-content:center"><a class="btn" href="#/">How it works</a><a class="btn ghost" href="#/integrate">Integrate</a></div></section>`;
   }
   switch (route ?? "") {
     case "":
@@ -568,8 +570,9 @@ async function render() {
       <button class="btn" onclick="location.reload()">Try again</button></section>`;
   }
   if (id !== renderId) return; // a newer navigation finished first
+  const prelaunch = DEPLOYED ? "" : `<p class="banner">Preview — the contract is not on Arc mainnet yet, so plans can't be created.</p>`;
   const banner = state.wrongChain ? `<p class="banner">Your wallet is on another network. Actions will ask to switch to Arc.</p>` : "";
-  app.innerHTML = `${header()}${banner}<main>${main}</main>${footer()}`;
+  app.innerHTML = `${header()}${prelaunch}${banner}<main>${main}</main>${footer()}`;
 }
 
 window.addEventListener("hashchange", () => {
