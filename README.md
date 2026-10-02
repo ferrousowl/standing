@@ -105,6 +105,13 @@ The bot asks `executable()` for due orders whose fee covers its gas, simulates t
 - **Native and ERC-20 USDC are one balance.** The contract has no `receive()` and never reads `address(this).balance`; all accounting goes through the 6-decimal interface, as Arc's porting guide recommends.
 - **Owner powers are narrow.** The owner can change the protocol fee (never above 1%), allow-list tokens, and withdraw accrued fees. It cannot touch plans, orders, or anyone's funds.
 
+## Notes for Arc builders
+
+Two things found while building this that affect any browser app on Arc:
+
+- **Brave and uBlock Origin block the official RPC endpoints.** The EasyPrivacy filter list contains `||arc.io^$third-party`, a rule that predates this chain. It blocks cross-site requests to every `*.arc.io` host, so an app that only uses `rpc.mainnet.arc.io` and its provider mirrors fails to load for those visitors. This app falls back to endpoints on other domains (`web/src/chain.ts`).
+- **The public RPCs return only about 1,000 blocks of logs per query**, roughly eight minutes. Reconciling from events needs an indexer; this app reads everything from contract state and views instead.
+
 ## Status
 
 An early proof of concept. The contract has a test suite and went through one adversarial review pass, whose findings are fixed and kept as regression tests in `contracts/test/Review.t.sol`. **It has not been professionally audited.** Use small amounts.
